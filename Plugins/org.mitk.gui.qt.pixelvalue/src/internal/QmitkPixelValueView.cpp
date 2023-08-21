@@ -180,6 +180,27 @@ void QmitkPixelValueView::Update()
     else if (pixelType == itk::IOPixelEnum::DIFFUSIONTENSOR3D || pixelType == itk::IOPixelEnum::SYMMETRICSECONDRANKTENSOR)
     {
       m_Ui->pixelValueLineEdit->setText(QStringLiteral("See ODF Details view."));
+      return;
+    }
+
+    mitk::ScalarType pixelValue = 0.0;
+
+    mitkPixelTypeMultiplex5(
+      mitk::FastSinglePixelAccess,
+      image->GetChannelDescriptor().GetPixelType(),
+      image,
+      image->GetVolumeData(image->GetTimeGeometry()->TimePointToTimeStep(timePoint)),
+      index,
+      pixelValue,
+      component);
+
+    std::ostringstream stream;
+    stream.imbue(std::locale::classic());
+    stream.precision(10);
+
+    if (fabs(pixelValue) > 1000000 || fabs(pixelValue) < 0.01)
+    {
+      stream << std::scientific;
     }
     else
     {
