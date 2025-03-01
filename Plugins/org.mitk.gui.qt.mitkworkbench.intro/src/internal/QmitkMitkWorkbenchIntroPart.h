@@ -14,8 +14,6 @@ found in the LICENSE file.
 #ifndef QmitkMitkWorkbenchIntroPart_h
 #define QmitkMitkWorkbenchIntroPart_h
 
-#include <QtCore/qconfig.h>
-
 #include <berryQtIntroPart.h>
 #include <memory>
 

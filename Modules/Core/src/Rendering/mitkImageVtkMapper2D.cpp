@@ -779,11 +779,23 @@ void mitk::ImageVtkMapper2D::SetDefaultProperties(mitk::DataNode *node, mitk::Ba
     sliceSelector->SetChannelNr(image->GetDimension(4) / 2);
     sliceSelector->Update();
     centralSliceImage = sliceSelector->GetOutput();
+    bool imageMarkedAsBinaryByIO = false;
+    auto prop = image->GetProperty("binary");
+    if(prop && dynamic_cast<BoolProperty*>(prop.GetPointer()))
+    {
+      imageMarkedAsBinaryByIO = dynamic_cast<BoolProperty*>(prop.GetPointer())->GetValue();
+      if(imageMarkedAsBinaryByIO)
+        isBinaryImage = true;
+      else
+        isBinaryImage = false;
+    }
+    else
+    {
+      isBinaryImage = IsBinaryImage(centralSliceImage);
 
-    isBinaryImage = IsBinaryImage(centralSliceImage);
-
-    if (isBinaryImage) // Potential binary image. Now take a close look.
-      isBinaryImage = IsBinaryImage(image);
+      if (isBinaryImage) // Potential binary image. Now take a close look.
+        isBinaryImage = IsBinaryImage(image);
+    }
   }
 
   std::string className = image->GetNameOfClass();
