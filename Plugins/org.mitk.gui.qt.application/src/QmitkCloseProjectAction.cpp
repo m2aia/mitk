@@ -115,21 +115,21 @@ void QmitkCloseProjectAction::Run()
     }
 
     // Remove the datastorage from the data storage service (unless it's the default)
-    if (!storageInfo.IsDefault())
-    {
-      dsService->RemoveDataStorage(storageInfo.GetLabel());
-    }
+    // if (!storageInfo.IsDefault())
+    // {
+    //   dsService->RemoveDataStorage(storageInfo.GetLabel());
+    // }
 
     // Close all editors with this data storage as input
-    mitk::DataStorageEditorInput::Pointer dsInput(new mitk::DataStorageEditorInput(storageInfo));
-    QList<berry::IEditorReference::Pointer> dsEditors =
-        m_Window->GetActivePage()->FindEditors(dsInput, QString(), berry::IWorkbenchPage::MATCH_INPUT);
+    // mitk::DataStorageEditorInput::Pointer dsInput(new mitk::DataStorageEditorInput(storageInfo));
+    // QList<berry::IEditorReference::Pointer> dsEditors =
+    //     m_Window->GetActivePage()->FindEditors(dsInput, QString(), berry::IWorkbenchPage::MATCH_INPUT);
 
-    if (!dsEditors.empty())
-    {
-      QList<berry::IEditorReference::Pointer> editorsToClose = dsEditors;
-      m_Window->GetActivePage()->CloseEditors(editorsToClose, false);
-    }
+    // if (!dsEditors.empty())
+    // {
+    //   QList<berry::IEditorReference::Pointer> editorsToClose = dsEditors;
+    //   m_Window->GetActivePage()->CloseEditors(editorsToClose, false);
+    // }
   }
   catch (std::exception& e)
   {
