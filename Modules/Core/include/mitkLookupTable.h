@@ -262,7 +262,12 @@ namespace mitk
       PET_COLOR,
       PET_20,
       PET_BLACK_WHITE,
-      TURBO
+      TURBO,
+      GRAYSCALE_TRANSPARENT,
+      HOT_IRON_TRANSPARENT,
+      VIRIDIS_TRANSPARENT,
+      CIVIDS_TRANSPARENT,
+      CIVIDS
     };
 
     /** \brief List of all predefined lookup table type names. */
@@ -307,7 +312,7 @@ namespace mitk
 
     mitkCloneMacro(Self);
 
-    virtual void BuildGrayScaleLookupTable();
+    virtual void BuildGrayScaleLookupTable(bool transparent = false);
     virtual void BuildLegacyBinaryLookupTable();
     virtual void BuildLegacyRainbowColorLookupTable();
     virtual void BuildInverseGrayScaleLookupTable();
@@ -315,6 +320,11 @@ namespace mitk
     virtual void BuildPlasmaLookupTable();
     virtual void BuildInfernoLookupTable();
     virtual void BuildViridisLookupTable();
+    virtual void BuildHotIronLookupTable(bool transparent = false);
+    virtual void BuildPlasmaLookupTable();
+	  virtual void BuildInfernoLookupTable();
+    virtual void BuildViridisLookupTable(bool transparent = false);
+    virtual void BuildCividsLookupTable(bool transparent = false);
     virtual void BuildMagmaLookupTable();
     virtual void BuildJetLookupTable(bool transparent = false);
     virtual void BuildPETColorLookupTable();
