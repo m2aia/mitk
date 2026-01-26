@@ -177,14 +177,14 @@ void mitk::LookupTable::SetType(const mitk::LookupTable::LookupTableType type)
       this->BuildJetLookupTable(true);
       break;
     case (mitk::LookupTable::PLASMA):
-	    this->BuildPlasmaLookupTable();
-	    break;
-	  case (mitk::LookupTable::INFERNO):
-	    this->BuildInfernoLookupTable();
+      this->BuildPlasmaLookupTable();
       break;
-	  case (mitk::LookupTable::VIRIDIS):
-	    this->BuildViridisLookupTable();
-	    break;
+    case (mitk::LookupTable::INFERNO):
+      this->BuildInfernoLookupTable();
+      break;
+    case (mitk::LookupTable::VIRIDIS):
+      this->BuildViridisLookupTable();
+      break;
     case (mitk::LookupTable::VIRIDIS_TRANSPARENT):
       this->BuildViridisLookupTable(true);
       break;
