@@ -126,3 +126,22 @@ if(LINUX)
     ")
   endforeach()
 endif()
+
+# Install Elastix / Transformix binaries
+if(MITK_USE_Elastix)
+  if(WIN32)
+    MITK_INSTALL(PROGRAMS
+      "${MITK_EXTERNAL_PROJECT_PREFIX}/bin/elastix.exe"
+      "${MITK_EXTERNAL_PROJECT_PREFIX}/bin/transformix.exe"
+    )
+  else()
+    MITK_INSTALL(PROGRAMS
+      "${MITK_EXTERNAL_PROJECT_PREFIX}/bin/elastix"
+      "${MITK_EXTERNAL_PROJECT_PREFIX}/bin/transformix"
+    )
+    # Install Elastix runtime shared libraries (e.g. libANNlib)
+    MITK_INSTALL(DIRECTORY "${MITK_EXTERNAL_PROJECT_PREFIX}/lib/"
+      FILES_MATCHING PATTERN "libANNlib*"
+    )
+  endif()
+endif()
