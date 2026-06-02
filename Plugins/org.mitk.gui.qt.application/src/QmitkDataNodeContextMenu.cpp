@@ -201,43 +201,33 @@ void QmitkDataNodeContextMenu::InitDefaultActions()
   m_SurfaceDataNodeDescriptor->AddAction(m_SurfaceRepresentationAction, false);
   m_DescriptorActionList.push_back(std::make_pair(m_SurfaceDataNodeDescriptor, m_SurfaceRepresentationAction));
 
-  // m2: instead of calling specific descriptors, iterate over all and add assigned context menu entries
+  // m2: register actions for m2aia-specific descriptors
   auto descriptorManager = QmitkNodeDescriptorManager::GetInstance();
-  if(auto descriptor = descriptorManager->GetDescriptor("SpectrumImage"))
-    for(auto action : descriptor->GetActions())
-      m_DescriptorActionList.push_back(std::make_pair(descriptor, action));
+  for (const auto* name : {"SpectrumImage", "SpectrumImageStack", "IntervalVector", "MultiComponentImage"})
+  {
+    if (auto descriptor = descriptorManager->GetDescriptor(name))
+      for (auto action : descriptor->GetActions())
+        m_DescriptorActionList.push_back(std::make_pair(descriptor, action));
+  }
 
-  if(auto descriptor = descriptorManager->GetDescriptor("SpectrumImageStack"))
-    for(auto action : descriptor->GetActions())
-      m_DescriptorActionList.push_back(std::make_pair(descriptor, action));
+  // m2: NodePredicateDataType uses exact class-name matching, so the "Image" descriptor never
+  // matches SpectrumImage nodes. Manually add the same Image context menu actions with the same
+  // isBatchAction flags: Color (true), Colormap (true/default), TextureInterpolation (false).
+  if (auto spectrumDesc = descriptorManager->GetDescriptor("SpectrumImage"))
+  {
+    auto spectrumColorAction = new QmitkDataNodeColorAction(m_Parent, workbenchPartSite);
+    spectrumDesc->AddAction(spectrumColorAction, true);
+    m_DescriptorActionList.push_back(std::make_pair(spectrumDesc, spectrumColorAction));
 
-  if(auto descriptor = descriptorManager->GetDescriptor("IntervalVector"))
-    for(auto action : descriptor->GetActions())
-      m_DescriptorActionList.push_back(std::make_pair(descriptor, action));
+    auto spectrumColormapAction = new QmitkDataNodeColorMapAction(m_Parent, workbenchPartSite);
+    spectrumDesc->AddAction(spectrumColormapAction); // isBatchAction=true (default, same as Image)
+    m_DescriptorActionList.push_back(std::make_pair(spectrumDesc, spectrumColormapAction));
 
-  if(auto descriptor = descriptorManager->GetDescriptor("MultiComponentImage"))
-    for(auto action : descriptor->GetActions())
-      m_DescriptorActionList.push_back(std::make_pair(descriptor, action));
+    auto spectrumTextureAction = new QmitkDataNodeTextureInterpolationAction(m_Parent, workbenchPartSite);
+    spectrumDesc->AddAction(spectrumTextureAction, false);
+    m_DescriptorActionList.push_back(std::make_pair(spectrumDesc, spectrumTextureAction));
+  }
 
-  if(auto descriptor = descriptorManager->GetDescriptor("Image"))
-    for(auto action : descriptor->GetActions())
-      m_DescriptorActionList.push_back(std::make_pair(descriptor, action));
-  auto descriptor = descriptorManager->GetDescriptor("SpectrumImage");
-  for(auto action : descriptor->GetActions())
-    m_DescriptorActionList.push_back(std::make_pair(descriptor, action));
-
-  if(auto descriptor = descriptorManager->GetDescriptor("SpectrumImageStack"))
-    for(auto action : descriptor->GetActions())
-      m_DescriptorActionList.push_back(std::make_pair(descriptor, action));
-
-  if(auto descriptor = descriptorManager->GetDescriptor("IntervalVector"))
-    for(auto action : descriptor->GetActions())
-      m_DescriptorActionList.push_back(std::make_pair(descriptor, action));
-
-  if(auto descriptor = descriptorManager->GetDescriptor("MultiComponentImage"))
-    for(auto action : descriptor->GetActions())
-      m_DescriptorActionList.push_back(std::make_pair(descriptor, action));
-  
 }
 
 void QmitkDataNodeContextMenu::InitExtensionPointActions()
