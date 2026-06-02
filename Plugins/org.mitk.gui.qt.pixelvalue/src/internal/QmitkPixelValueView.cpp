@@ -176,10 +176,13 @@ void QmitkPixelValueView::Update()
     if (pixelType == itk::IOPixelEnum::RGB || pixelType == itk::IOPixelEnum::RGBA)
     {
       m_Ui->pixelValueLineEdit->setText(QString::fromStdString(mitk::ConvertCompositePixelValueToString(image, index)));
+      this->UpdateCoords(image, index, position);
+      return;
     }
     else if (pixelType == itk::IOPixelEnum::DIFFUSIONTENSOR3D || pixelType == itk::IOPixelEnum::SYMMETRICSECONDRANKTENSOR)
     {
       m_Ui->pixelValueLineEdit->setText(QStringLiteral("See ODF Details view."));
+      this->UpdateCoords(image, index, position);
       return;
     }
 
