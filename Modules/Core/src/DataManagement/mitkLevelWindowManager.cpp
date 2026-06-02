@@ -567,12 +567,16 @@ mitk::DataStorage::SetOfObjects::ConstPointer mitk::LevelWindowManager::GetRelev
   auto isTImage = NodePredicateDataType::New("TensorImage");
   auto isOdfImage = NodePredicateDataType::New("OdfImage");
   auto isShImage = NodePredicateDataType::New("ShImage");
+  auto isImzMLSpectrumImage = NodePredicateDataType::New("ImzMLSpectrumImage");
+  auto isSpectrumImage = NodePredicateDataType::New("SpectrumImage");
+  auto isSpectrumImageStack = NodePredicateDataType::New("SpectrumImageStack");
   auto predicateTypes = NodePredicateOr::New();
   predicateTypes->AddPredicate(isImage);
   predicateTypes->AddPredicate(isDImage);
   predicateTypes->AddPredicate(isTImage);
   predicateTypes->AddPredicate(isOdfImage);
   predicateTypes->AddPredicate(isShImage);
+  predicateTypes->AddPredicate(isImzMLSpectrumImage);
 
   NodePredicateAnd::Pointer predicate = NodePredicateAnd::New();
   predicate->AddPredicate(notBinary);
