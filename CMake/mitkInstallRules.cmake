@@ -129,19 +129,24 @@ endif()
 
 # Install Elastix / Transformix binaries
 if(MITK_USE_Elastix)
-  if(WIN32)
-    MITK_INSTALL(PROGRAMS
-      "${MITK_EXTERNAL_PROJECT_PREFIX}/bin/elastix.exe"
-      "${MITK_EXTERNAL_PROJECT_PREFIX}/bin/transformix.exe"
-    )
-  else()
-    MITK_INSTALL(PROGRAMS
-      "${MITK_EXTERNAL_PROJECT_PREFIX}/bin/elastix"
-      "${MITK_EXTERNAL_PROJECT_PREFIX}/bin/transformix"
-    )
-    # Install Elastix runtime shared libraries (e.g. libANNlib)
-    MITK_INSTALL(DIRECTORY "${MITK_EXTERNAL_PROJECT_PREFIX}/lib/"
-      FILES_MATCHING PATTERN "libANNlib*"
-    )
-  endif()
+  foreach(_bindir IN LISTS MITK_INSTALL_BINDIR)
+    if(WIN32)
+      install(PROGRAMS
+        "${MITK_EXTERNAL_PROJECT_PREFIX}/bin/elastix.exe"
+        "${MITK_EXTERNAL_PROJECT_PREFIX}/bin/transformix.exe"
+        DESTINATION ${_bindir}
+      )
+    else()
+      install(PROGRAMS
+        "${MITK_EXTERNAL_PROJECT_PREFIX}/bin/elastix"
+        "${MITK_EXTERNAL_PROJECT_PREFIX}/bin/transformix"
+        DESTINATION ${_bindir}
+      )
+      # Install Elastix runtime shared libraries (e.g. libANNlib)
+      install(DIRECTORY "${MITK_EXTERNAL_PROJECT_PREFIX}/lib/"
+        DESTINATION ${_bindir}
+        FILES_MATCHING PATTERN "libANNlib*"
+      )
+    endif()
+  endforeach()
 endif()

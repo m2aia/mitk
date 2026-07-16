@@ -58,15 +58,15 @@ Keep in mind that image processing is a highly memory intensive task and monitor
 
 \section MITKWorkbenchManualPage_DataManager Data Manager
 The Data Manager is the central component of MITK to manage medical data like images, segmentation masks, registrations, surfaces, point sets, annotations and measurements.
-For a detailed description of the Data Manager please be referred to the view documentation:   \ref org_mitk_views_datamanager.
+For a detailed description of the Data Manager please refer to the Data Manager view documentation.
 
 \section MITKWorkbenchManualPage_ImageNavigator Image Navigator
 Fast movement through the available data can be achieved by using the Image Navigator. By moving the sliders around you can scroll through the slides and timesteps.
-For a detailed description of the Image Navigator please be referred to the Image Navigator view documentation:   \ref org_mitk_views_imagenavigator.
+For a detailed description of the Image Navigator please refer to the Image Navigator view documentation.
 
 \section MITKWorkbenchManualPage_FourWindowView Standard Display
 
-The four window view of the standard display is the heart of the MITK image viewing. For a detailed description of the four window view and the levelwindow please be referred to the standard display view documentation:   \ref org_mitk_editors_stdmultiwidget.
+The four window view of the standard display is the heart of the MITK image viewing. For a detailed description of the four window view and the levelwindow please refer to the standard display view documentation.
 
 
 */

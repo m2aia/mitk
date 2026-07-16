@@ -552,14 +552,20 @@ function(mitk_create_module)
         endif()
       endif()
 
+      set(_module_generated_include_dir ${CMAKE_CURRENT_BINARY_DIR})
+      if(MITK_USE_Qt6 AND (MODULE_AUTOMOC OR UI_FILES OR QRC_FILES))
+        set(_module_generated_include_dir "${CMAKE_CURRENT_BINARY_DIR}/include")
+        file(MAKE_DIRECTORY "${_module_generated_include_dir}")
+      endif()
+
       # create export macros
       if (NOT MODULE_EXECUTABLE)
         generate_export_header(${MODULE_NAME}
-          EXPORT_FILE_NAME ${MODULE_NAME}Exports.h
+          EXPORT_FILE_NAME "${_module_generated_include_dir}/${MODULE_NAME}Exports.h"
         )
       endif()
 
-      target_include_directories(${MODULE_TARGET} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+      target_include_directories(${MODULE_TARGET} PUBLIC ${_module_generated_include_dir})
 
     endif()
 
@@ -601,6 +607,9 @@ function(mitk_create_module)
         AUTOUIC ON
         AUTORCC ON
         AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/src")
+
+      target_include_directories(${MODULE_TARGET} BEFORE PRIVATE
+        "${CMAKE_CURRENT_BINARY_DIR}/./${MODULE_TARGET}_autogen/include")
 
       if(MODULE_AUTOMOC_FORCE_INCLUDES)
         set(_automoc_options "")
