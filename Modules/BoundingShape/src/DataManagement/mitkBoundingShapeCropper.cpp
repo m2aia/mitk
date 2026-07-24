@@ -19,6 +19,7 @@ found in the LICENSE file.
 #include <mitkTimeHelper.h>
 
 #include <cmath>
+#include <type_traits>
 
 #include <vtkMatrix4x4.h>
 #include <vtkSmartPointer.h>
@@ -29,6 +30,29 @@ found in the LICENSE file.
 #include <itkImageRegionConstIterator.h>
 #include <itkRGBAPixel.h>
 #include <itkRGBPixel.h>
+
+namespace
+{
+  template <typename TPixel>
+  TPixel CreateOutsidePixelValue(mitk::ScalarType outsideValue)
+  {
+    if constexpr (std::is_arithmetic_v<TPixel>)
+    {
+      return static_cast<TPixel>(outsideValue);
+    }
+    else
+    {
+      TPixel pixel;
+      pixel.Fill(static_cast<typename TPixel::ComponentType>(outsideValue));
+      return pixel;
+    }
+  }
+
+  bool IsRGBOrRGBAPixelType(const mitk::PixelType &pixelType)
+  {
+    return pixelType.GetPixelType() == itk::IOPixelEnum::RGB || pixelType.GetPixelType() == itk::IOPixelEnum::RGBA;
+  }
+}
 
 namespace mitk
 {
@@ -50,7 +74,7 @@ namespace mitk
   template <typename TPixel, unsigned int VImageDimension>
   void BoundingShapeCropper::CutImage(itk::Image<TPixel, VImageDimension> *inputItkImage, int timeStep)
   {
-    MITK_INFO << "Scalar Pixeltype" << std::endl;
+    MITK_INFO << "Crop image" << std::endl;
 
     typedef TPixel TOutputPixel;
     typedef itk::Image<TPixel, VImageDimension> ItkInputImageType;
@@ -59,7 +83,7 @@ namespace mitk
     typedef itk::ImageRegionIteratorWithIndex<ItkInputImageType> ItkInputImageIteratorType;
     typedef itk::ImageRegionIteratorWithIndex<ItkOutputImageType> ItkOutputImageIteratorType;
 
-    TOutputPixel outsideValue = this->GetOutsideValue();
+    TOutputPixel outsideValue = CreateOutsidePixelValue<TOutputPixel>(this->GetOutsideValue());
     // currently 0 if not set in advance
     // TODO: change default value to itk::NumericTraits<TOutputPixel>::min();
 
@@ -294,7 +318,14 @@ namespace mitk
       return;
     }
 
-    AccessByItk_1(image, CutImage, boTimeStep);
+    if (IsRGBOrRGBAPixelType(image->GetPixelType()))
+    {
+      AccessFixedTypeByItk_1(image, CutImage, MITK_ACCESSBYITK_COMPOSITE_PIXEL_TYPES_SEQ, (3), boTimeStep);
+    }
+    else
+    {
+      AccessByItk_1(image, CutImage, boTimeStep);
+    }
   }
 
   void BoundingShapeCropper::GenerateData()
