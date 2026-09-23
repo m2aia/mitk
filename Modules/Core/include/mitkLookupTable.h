@@ -241,6 +241,9 @@ namespace mitk
      * \li PET_20 A LookupTable for PET_20 color rendering.
      * \li PET_BLACK_WHITE A LookupTable for PET white to black color rendering.
      * \li TURBO An improved rainbow LookupTable for visualization.
+     * \li COOLWARM A diverging blue-white-red LookupTable.
+     * \li RDBU A diverging red-white-blue LookupTable.
+     * \li SPECTRAL A diverging multi-hue LookupTable.
      *
      * The different LookupTableTypes can be applied in the MitkWorkbench via right-clicking
      * on an image and choosing a color map.
@@ -267,7 +270,13 @@ namespace mitk
       HOT_IRON_TRANSPARENT,
       VIRIDIS_TRANSPARENT,
       CIVIDS_TRANSPARENT,
-      CIVIDS
+      CIVIDS,
+      COOLWARM,
+      COOLWARM_TRANSPARENT,
+      RDBU,
+      RDBU_TRANSPARENT,
+      SPECTRAL,
+      SPECTRAL_TRANSPARENT
     };
 
     /** \brief List of all predefined lookup table type names. */
@@ -328,6 +337,9 @@ namespace mitk
     virtual void BuildPETBWLookupTable();
     virtual void BuildMultiLabelLookupTable();
     virtual void BuildTurboLookupTable();
+    virtual void BuildCoolwarmLookupTable(bool transparent = false);
+    virtual void BuildRdBuLookupTable(bool transparent = false);
+    virtual void BuildSpectralLookupTable(bool transparent = false);
 
     vtkSmartPointer<vtkLookupTable> m_LookupTable;
 

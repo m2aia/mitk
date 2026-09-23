@@ -14,6 +14,7 @@ found in the LICENSE file.
 #include <itkProcessObject.h>
 
 #include <Colortables/Civids.h>
+#include <Colortables/Coolwarm.h>
 #include <Colortables/HotIron.h>
 #include <Colortables/Jet.h>
 #include <Colortables/Inferno.h>
@@ -23,6 +24,8 @@ found in the LICENSE file.
 #include <Colortables/Multilabel.h>
 #include <Colortables/PET20.h>
 #include <Colortables/PETColor.h>
+#include <Colortables/RdBu.h>
+#include <Colortables/Spectral.h>
 #include <Colortables/Turbo.h>
 #include <mitkLookupTableProperty.h>
 
@@ -86,6 +89,15 @@ namespace
     const double hue = std::fmod(i * goldenHueStep, 1.0);
     return HSVToRGB(hue, tier.saturation, tier.value);
   }
+
+  // Alpha for slot i (0-based) of a transparent diverging table: 0 at the
+  // centre (neutral / no-difference value), ramping linearly to 1 at both
+  // ends, so an overlay fades in only where the value deviates from zero.
+  double DivergingAlpha(int i, int numValues)
+  {
+    const double center = (numValues - 1) / 2.0;
+    return std::abs(i - center) / center;
+  }
 }
 
 std::vector<std::string> mitk::LookupTable::typenameList = {
@@ -110,6 +122,12 @@ std::vector<std::string> mitk::LookupTable::typenameList = {
   "Viridis Transparent",
   "Civids Transparent",
   "Civids",
+  "Coolwarm",
+  "Coolwarm Transparent",
+  "RdBu",
+  "RdBu Transparent",
+  "Spectral",
+  "Spectral Transparent",
   };
 
 mitk::LookupTable::LookupTable()
@@ -217,6 +235,24 @@ void mitk::LookupTable::SetType(const mitk::LookupTable::LookupTableType type)
       break;
     case (mitk::LookupTable::LEGACY_RAINBOW_COLOR):
       this->BuildLegacyRainbowColorLookupTable();
+      break;
+    case (mitk::LookupTable::COOLWARM):
+      this->BuildCoolwarmLookupTable();
+      break;
+    case (mitk::LookupTable::COOLWARM_TRANSPARENT):
+      this->BuildCoolwarmLookupTable(true);
+      break;
+    case (mitk::LookupTable::RDBU):
+      this->BuildRdBuLookupTable();
+      break;
+    case (mitk::LookupTable::RDBU_TRANSPARENT):
+      this->BuildRdBuLookupTable(true);
+      break;
+    case (mitk::LookupTable::SPECTRAL):
+      this->BuildSpectralLookupTable();
+      break;
+    case (mitk::LookupTable::SPECTRAL_TRANSPARENT):
+      this->BuildSpectralLookupTable(true);
       break;
     default:
       MITK_ERROR << "non-existing colormap";
@@ -783,6 +819,57 @@ void mitk::LookupTable::BuildMagmaLookupTable()
   {
     lut->SetTableValue(
       i, (double)Magma[i][0] / 255.0, (double)Magma[i][1] / 255.0, (double)Magma[i][2] / 255.0, 1.0);
+  }
+
+  m_LookupTable = lut;
+  this->Modified();
+}
+
+void mitk::LookupTable::BuildCoolwarmLookupTable(bool transparent)
+{
+  vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
+  lut->SetNumberOfTableValues(256);
+  lut->Build();
+
+  for (int i = 0; i < 256; i++)
+  {
+    const double alpha = transparent ? DivergingAlpha(i, 256) : 1.0;
+    lut->SetTableValue(
+      i, (double)Coolwarm[i][0] / 255.0, (double)Coolwarm[i][1] / 255.0, (double)Coolwarm[i][2] / 255.0, alpha);
+  }
+
+  m_LookupTable = lut;
+  this->Modified();
+}
+
+void mitk::LookupTable::BuildRdBuLookupTable(bool transparent)
+{
+  vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
+  lut->SetNumberOfTableValues(256);
+  lut->Build();
+
+  for (int i = 0; i < 256; i++)
+  {
+    const double alpha = transparent ? DivergingAlpha(i, 256) : 1.0;
+    lut->SetTableValue(
+      i, (double)RdBu[i][0] / 255.0, (double)RdBu[i][1] / 255.0, (double)RdBu[i][2] / 255.0, alpha);
+  }
+
+  m_LookupTable = lut;
+  this->Modified();
+}
+
+void mitk::LookupTable::BuildSpectralLookupTable(bool transparent)
+{
+  vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
+  lut->SetNumberOfTableValues(256);
+  lut->Build();
+
+  for (int i = 0; i < 256; i++)
+  {
+    const double alpha = transparent ? DivergingAlpha(i, 256) : 1.0;
+    lut->SetTableValue(
+      i, (double)Spectral[i][0] / 255.0, (double)Spectral[i][1] / 255.0, (double)Spectral[i][2] / 255.0, alpha);
   }
 
   m_LookupTable = lut;

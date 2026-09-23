@@ -1,4 +1,5 @@
 set(H_FILES
+  Colortables/Coolwarm.h
   Colortables/HotIron.h
   Colortables/Inferno.h
   Colortables/Jet.h
@@ -7,6 +8,8 @@ set(H_FILES
   Colortables/PET20.h
   Colortables/PETColor.h
   Colortables/Plasma.h
+  Colortables/RdBu.h
+  Colortables/Spectral.h
   Colortables/Turbo.h
   Colortables/Viridis.h
   itkImportMitkImageContainer.h
