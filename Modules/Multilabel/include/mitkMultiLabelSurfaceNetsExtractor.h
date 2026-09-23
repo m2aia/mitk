@@ -43,6 +43,11 @@ namespace mitk
    * vtkSurfaceNets3D writes; component 0 holds the foreground label of each face
    * (background or higher labels go to component 1).
    *
+   * Group images that are flat along an axis - a single-slice segmentation, as 2D imaging
+   * mass spectrometry produces - are not volumes and are rejected by vtkSurfaceNets3D. The
+   * extractor duplicates the slice along that axis first, so such a segmentation is rendered
+   * as a plate of the thickness of its one voxel instead of not at all.
+   *
    * The class also encapsulates a workaround for a vtkSurfaceNets3D bug in VTK 9.5.2,
    * where the boundary cache may be reused without populating the local newScalars,
    * causing TransformMeshType to dereference null in the smoothed path.
@@ -72,6 +77,8 @@ namespace mitk
      *
      * \param groupImage  vtkImageData of one group of a MultiLabelSegmentation
      *                    (typically obtained via Image::GetVtkImageData(timeStep)).
+     *                    A group image that is flat along an axis is thickened to a slab
+     *                    of the same extent, see the class documentation.
      * \param labelValues The labels to include. An empty list returns an empty mesh.
      * \return            A fresh polydata; safe to retain.
      */

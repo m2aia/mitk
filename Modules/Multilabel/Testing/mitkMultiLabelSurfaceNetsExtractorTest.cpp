@@ -23,6 +23,7 @@ found in the LICENSE file.
 #include <vtkPolyData.h>
 
 #include <cmath>
+#include <sstream>
 
 class mitkMultiLabelSurfaceNetsExtractorTestSuite : public mitk::TestFixture
 {
@@ -34,6 +35,9 @@ class mitkMultiLabelSurfaceNetsExtractorTestSuite : public mitk::TestFixture
   MITK_TEST(ExtractPerLabel_ReturnsOnePolyDataPerPresentLabel);
   MITK_TEST(ExtractPerLabel_OmitsLabelsWithNoBoundary);
   MITK_TEST(SmoothingToggle_ChangesPointPositions);
+  MITK_TEST(Extract_SingleSliceImage_ProducesSlabOfOneVoxelThickness);
+  MITK_TEST(Extract_SingleSliceImage_SmoothedKeepsThicknessAndStaysOnTheSlice);
+  MITK_TEST(ExtractPerLabel_SingleSliceImage_ReturnsOnePolyDataPerPresentLabel);
   MITK_TEST(GetImageToWorldMatrix_NullGeometry_ReturnsIdentity);
   MITK_TEST(GetImageToWorldMatrix_StripsSpacingAndKeepsOrigin);
   MITK_TEST(GetImageToWorldMatrix_PreservesNonIdentityDirection);
@@ -73,6 +77,35 @@ private:
         for (int y = 10; y < 12; ++y)
           for (int x = 10; x < 12; ++x)
             setVoxel(x, y, z, 2);
+    }
+
+    return image;
+  }
+
+  /** Build a flat 16x16x1 uint16 image, the shape a 2D imaging mass spectrometry
+      segmentation has, with one or two square labels. */
+  static vtkSmartPointer<vtkImageData> MakeFlatLabeledImage(bool addSecondLabel)
+  {
+    auto image = vtkSmartPointer<vtkImageData>::New();
+    image->SetDimensions(16, 16, 1);
+    image->SetSpacing(1.0, 1.0, 4.0);
+    image->SetOrigin(0.0, 0.0, 0.0);
+    image->AllocateScalars(VTK_UNSIGNED_SHORT, 1);
+
+    auto* scalars = static_cast<unsigned short*>(image->GetScalarPointer());
+    std::fill(scalars, scalars + 16 * 16, static_cast<unsigned short>(0));
+
+    // Label 1: 4x4 square at [4..7].
+    for (int y = 4; y < 8; ++y)
+      for (int x = 4; x < 8; ++x)
+        scalars[y * 16 + x] = 1;
+
+    if (addSecondLabel)
+    {
+      // Label 2: 2x2 square at [10..11], well separated from label 1.
+      for (int y = 10; y < 12; ++y)
+        for (int x = 10; x < 12; ++x)
+          scalars[y * 16 + x] = 2;
     }
 
     return image;
@@ -204,6 +237,80 @@ public:
     }
     CPPUNIT_ASSERT_MESSAGE("Smoothed output must contain at least one point off the voxel half-grid",
                            foundOffGrid);
+  }
+
+  void Extract_SingleSliceImage_ProducesSlabOfOneVoxelThickness()
+  {
+    // vtkSurfaceNets3D on its own rejects a flat image ("Expecting 3D data (volume).")
+    // and returns nothing; the extractor duplicates the slice so the labels show up as a
+    // plate that occupies exactly the voxel the slice has.
+    auto image = MakeFlatLabeledImage(true);
+
+    mitk::MultiLabelSurfaceNetsExtractor extractor;
+    extractor.SetSmoothing(false);
+    auto result = extractor.Extract(image, {1, 2});
+
+    CPPUNIT_ASSERT(result != nullptr);
+    CPPUNIT_ASSERT_MESSAGE("A single-slice segmentation must still yield boundary cells",
+                           result->GetNumberOfCells() > 0);
+
+    auto* boundaryLabels = result->GetCellData()->GetArray("BoundaryLabels");
+    CPPUNIT_ASSERT_MESSAGE("Output must carry the BoundaryLabels cell array", boundaryLabels != nullptr);
+
+    bool sawLabel1 = false;
+    bool sawLabel2 = false;
+    for (vtkIdType i = 0; i < boundaryLabels->GetNumberOfTuples(); ++i)
+    {
+      const auto fg = boundaryLabels->GetComponent(i, 0);
+      if (fg == 1.0) sawLabel1 = true;
+      else if (fg == 2.0) sawLabel2 = true;
+    }
+    CPPUNIT_ASSERT_MESSAGE("Both labels of the slice must be represented", sawLabel1 && sawLabel2);
+
+    // The slice sits at z = 0 with a spacing of 4, so the slab has to stay within
+    // [-2, 2] and fill it; anything else would render offset from or thicker than the slice.
+    double bounds[6];
+    result->GetBounds(bounds);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(-2.0, bounds[4], 1e-6);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(2.0, bounds[5], 1e-6);
+
+    // In-plane the labels keep their extent: label 1 spans voxels [4..7], whose
+    // boundary faces lie halfway outside their centers.
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(3.5, bounds[0], 1e-6);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(11.5, bounds[1], 1e-6);
+  }
+
+  void Extract_SingleSliceImage_SmoothedKeepsThicknessAndStaysOnTheSlice()
+  {
+    // Smoothing is the default in the workbench, and the duplicated slice is thin enough
+    // that a collapse would leave nothing to see.
+    auto image = MakeFlatLabeledImage(true);
+
+    mitk::MultiLabelSurfaceNetsExtractor extractor;
+    extractor.SetSmoothing(true);
+    auto result = extractor.Extract(image, {1, 2});
+
+    CPPUNIT_ASSERT(result->GetNumberOfCells() > 0);
+
+    double bounds[6];
+    result->GetBounds(bounds);
+    std::stringstream message;
+    message << "Smoothed slab must keep a visible thickness inside the slice, got z ["
+            << bounds[4] << ", " << bounds[5] << "]";
+    CPPUNIT_ASSERT_MESSAGE(message.str(), bounds[5] - bounds[4] > 1e-3);
+    CPPUNIT_ASSERT_MESSAGE(message.str(), bounds[4] >= -2.0 - 1e-6 && bounds[5] <= 2.0 + 1e-6);
+  }
+
+  void ExtractPerLabel_SingleSliceImage_ReturnsOnePolyDataPerPresentLabel()
+  {
+    auto image = MakeFlatLabeledImage(true);
+
+    mitk::MultiLabelSurfaceNetsExtractor extractor;
+    auto results = extractor.ExtractPerLabel(image, {1, 2});
+
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(2), results.size());
+    CPPUNIT_ASSERT(results[1]->GetNumberOfCells() > 0);
+    CPPUNIT_ASSERT(results[2]->GetNumberOfCells() > 0);
   }
 
   void GetImageToWorldMatrix_NullGeometry_ReturnsIdentity()

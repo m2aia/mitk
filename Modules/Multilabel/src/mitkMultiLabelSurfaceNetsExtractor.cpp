@@ -15,6 +15,7 @@ found in the LICENSE file.
 #include <mitkBaseGeometry.h>
 
 #include <vtkImageData.h>
+#include <vtkImageWrapPad.h>
 #include <vtkMatrix4x4.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
@@ -32,6 +33,76 @@ namespace
       scalars->Modified();
 
     groupImage->Modified();
+  }
+
+  /** Returns a two-samples-thick copy of a group image that is flat along one or more axes,
+      or nullptr if the image is a volume already.
+
+      vtkSurfaceNets3D rejects anything that is not a volume ("Expecting 3D data (volume).")
+      and returns nothing for it, which leaves single-slice segmentations - the common case
+      for 2D imaging mass spectrometry - invisible in the 3D window. Duplicating the slice
+      along its flat axis gives the algorithm the second sample it needs; the result is a
+      slab that shows the labels as a plate in 3D.
+
+      The duplicate must not double the thickness or push the slab off the slice, so each
+      duplicated axis gets half the original spacing and an origin that centers the two
+      samples on the original one. The slab then occupies exactly the voxel the slice
+      really has. */
+  vtkSmartPointer<vtkImageData> ThickenFlatAxes(vtkImageData* groupImage)
+  {
+    int extent[6];
+    groupImage->GetExtent(extent);
+
+    int paddedExtent[6];
+    bool isFlat[3];
+    bool anyFlat = false;
+    for (int axis = 0; axis < 3; ++axis)
+    {
+      paddedExtent[2 * axis] = extent[2 * axis];
+      paddedExtent[2 * axis + 1] = extent[2 * axis + 1];
+
+      isFlat[axis] = extent[2 * axis] >= extent[2 * axis + 1];
+      if (isFlat[axis])
+      {
+        paddedExtent[2 * axis + 1] = extent[2 * axis] + 1;
+        anyFlat = true;
+      }
+    }
+
+    if (!anyFlat)
+      return nullptr;
+
+    // Wrapping repeats the only sample the flat axis has, so the added slice is a copy of it.
+    auto pad = vtkSmartPointer<vtkImageWrapPad>::New();
+    pad->SetInputData(groupImage);
+    pad->SetOutputWholeExtent(paddedExtent);
+    pad->Update();
+
+    auto thickened = vtkSmartPointer<vtkImageData>::New();
+    thickened->ShallowCopy(pad->GetOutput());
+
+    double spacing[3];
+    double origin[3];
+    groupImage->GetSpacing(spacing);
+    groupImage->GetOrigin(origin);
+    for (int axis = 0; axis < 3; ++axis)
+    {
+      if (!isFlat[axis])
+        continue;
+
+      // Keep the pair of samples centered on the position of the original one:
+      // point coordinates are origin + index * spacing, so with half the spacing the
+      // origin has to move to put the midpoint of the two indices back where the
+      // single index was.
+      const int firstIndex = extent[2 * axis];
+      const double center = origin[axis] + firstIndex * spacing[axis];
+      spacing[axis] *= 0.5;
+      origin[axis] = center - (firstIndex + 0.5) * spacing[axis];
+    }
+    thickened->SetSpacing(spacing);
+    thickened->SetOrigin(origin);
+
+    return thickened;
   }
 }
 
@@ -84,7 +155,9 @@ vtkSmartPointer<vtkPolyData> mitk::MultiLabelSurfaceNetsExtractor::Extract(
 
   PrepareInput(groupImage);
 
-  m_SurfaceNets->SetInputData(groupImage);
+  auto thickened = ThickenFlatAxes(groupImage);
+
+  m_SurfaceNets->SetInputData(thickened != nullptr ? thickened.Get() : groupImage);
   this->ConfigureLabels(labelValues);
   m_SurfaceNets->InitializeSelectedLabelsList();
   m_SurfaceNets->SetOutputStyleToDefault();
@@ -113,7 +186,9 @@ mitk::MultiLabelSurfaceNetsExtractor::ExtractPerLabel(
 
   PrepareInput(groupImage);
 
-  m_SurfaceNets->SetInputData(groupImage);
+  auto thickened = ThickenFlatAxes(groupImage);
+
+  m_SurfaceNets->SetInputData(thickened != nullptr ? thickened.Get() : groupImage);
   this->ConfigureLabels(labelValues);
   m_SurfaceNets->SetOutputStyleToSelected();
 
